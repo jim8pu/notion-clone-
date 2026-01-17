@@ -1,0 +1,2836 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notion Clone Ultimate - Refactored</title>
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Roboto+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* --- 1. VARIABLES & THEME --- */
+        :root {
+            /* Light Mode (Default) */
+            --bg-main: #ffffff;
+            --bg-sidebar: #fbfbfa;
+            --bg-hover: #efefef;
+            --bg-block-hover: #f0f0f0;
+            --bg-menu: #ffffff;
+            --bg-modal: #ffffff;
+            --bg-overlay: rgba(15, 15, 15, 0.4);
+
+            --text-main: #37352f;
+            --text-muted: #787774;
+            --text-placeholder: #a5a4a1;
+
+            --border-color: #e9e9e7;
+            --divider-color: #e9e9e7;
+
+            --selection-bg: rgba(46, 170, 220, 0.2);
+            --caret-color: #37352f;
+
+            --accent-blue: #2383e2;
+            /* Standard Notion Blue */
+            --accent-orange: #d9730d;
+            --accent-red: #d44c47;
+
+            /* Dimensions */
+            --sidebar-width: 240px;
+            --header-height: 45px;
+            --page-width: 900px;
+            /* Standard width */
+
+            /* Shadows */
+            --shadow-menu: 0 4px 20px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
+            --shadow-modal: 0 8px 30px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Dark Mode (AMOLED) Override */
+        [data-theme="dark"] {
+            --bg-main: #000000;
+            --bg-sidebar: #0a0a0a;
+            --bg-hover: #1f1f1f;
+            --bg-block-hover: #181818;
+            --bg-menu: #161616;
+            --bg-modal: #161616;
+            --bg-overlay: rgba(0, 0, 0, 0.7);
+
+            --text-main: #ffffff;
+            --text-muted: #9b9b9b;
+            --text-placeholder: #555555;
+
+            --border-color: #2a2a2a;
+            --divider-color: #333333;
+
+            --selection-bg: rgba(46, 170, 220, 0.28);
+            --caret-color: #2eaadc;
+
+            --accent-blue: #2eaadc;
+            --accent-orange: #D9730D;
+            --accent-red: #ff5555;
+
+            --shadow-menu: 0 10px 30px rgba(0, 0, 0, 0.9), 0 0 0 1px #333;
+            --shadow-modal: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 0 1px #333;
+        }
+
+        /* --- 2. BASE --- */
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            display: flex;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        ::selection {
+            background: var(--selection-bg);
+        }
+
+        /* Typography Utilities */
+        .font-serif {
+            font-family: 'Lora', serif;
+        }
+
+        .font-mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .text-sm {
+            font-size: 14px;
+        }
+
+        .text-xs {
+            font-size: 12px;
+        }
+
+        .font-bold {
+            font-weight: 600;
+        }
+
+        .text-muted {
+            color: var(--text-muted);
+        }
+
+        .truncate {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: transparent;
+            border-radius: 5px;
+        }
+
+        *:hover::-webkit-scrollbar-thumb {
+            background: var(--text-placeholder);
+            opacity: 0.5;
+        }
+
+        /* Custom Scrollbar for Popups - Thin */
+        .popup-menu::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .popup-menu::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .popup-menu::-webkit-scrollbar-thumb {
+            background: var(--text-muted);
+            border-radius: 4px;
+        }
+
+        /* --- 3. SIDEBAR --- */
+        aside#sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            transition: margin-left 0.3s ease;
+            flex-shrink: 0;
+            z-index: 20;
+            user-select: none;
+            padding: 8px 0;
+            color: var(--text-main);
+        }
+
+        .sidebar-user {
+            margin: 0 4px 12px 4px;
+            padding: 6px 10px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: background 0.1s;
+            font-weight: 500;
+        }
+
+        .sidebar-user:hover {
+            background-color: var(--bg-hover);
+        }
+
+        .sidebar-emoji-icon {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar-menu-section {
+            padding: 4px 4px;
+        }
+
+        .sidebar-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 10px;
+            border-radius: 4px;
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.1s;
+            margin-bottom: 1px;
+            min-height: 30px;
+        }
+
+        .sidebar-btn:hover {
+            background-color: var(--bg-hover);
+            color: var(--text-main);
+        }
+
+        .sidebar-tree {
+            flex: 1;
+            overflow-y: auto;
+            margin-top: 16px;
+            padding: 0 4px;
+        }
+
+        .sidebar-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            margin-bottom: 4px;
+            margin-top: 24px;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .sidebar-section-header:first-child {
+            margin-top: 0;
+        }
+
+        .sidebar-section-title {
+            flex: 1;
+            user-select: none;
+        }
+
+        .sidebar-header-actions {
+            display: flex;
+            opacity: 0;
+            transition: opacity 0.1s;
+        }
+
+        .sidebar-section-header:hover .sidebar-header-actions {
+            opacity: 1;
+        }
+
+        .sidebar-header-action {
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            margin-left: 2px;
+        }
+
+        .sidebar-header-action:hover {
+            background-color: var(--bg-hover);
+            color: var(--text-main);
+        }
+
+        .favorites-list,
+        .pages-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0px;
+        }
+
+        .sidebar-item-container {
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .sidebar-children-container {
+            margin-left: 10px;
+            border-left: 1px solid var(--border-color);
+        }
+
+        .sidebar-row {
+            display: flex;
+            align-items: center;
+            min-height: 28px;
+            padding: 2px 10px;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: background-color 0.1s;
+            border-radius: 4px;
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .sidebar-row:hover {
+            background-color: var(--bg-hover);
+            color: var(--text-main);
+        }
+
+        .sidebar-row.active {
+            background-color: var(--bg-hover);
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .page-icon-box {
+            position: relative;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+
+        .page-icon-text {
+            font-size: 16px;
+            line-height: 1;
+            opacity: 0.9;
+        }
+
+        .page-toggle-overlay {
+            position: absolute;
+            inset: 0;
+            background-color: var(--bg-hover);
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.1s;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .sidebar-row:hover .page-toggle-overlay {
+            opacity: 1;
+        }
+
+        .sidebar-actions {
+            display: flex;
+            align-items: center;
+            opacity: 0;
+            margin-left: auto;
+            gap: 2px;
+        }
+
+        .sidebar-row:hover .sidebar-actions {
+            opacity: 1;
+        }
+
+        .action-btn {
+            padding: 2px;
+            border-radius: 3px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+        }
+
+        .action-btn:hover {
+            background-color: #d3d3d3;
+            color: var(--text-main);
+        }
+
+        [data-theme="dark"] .action-btn:hover {
+            background-color: #333;
+        }
+
+        /* --- 4. MAIN LAYOUT --- */
+        #main-viewport {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-main);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #header {
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 12px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: var(--bg-main);
+            font-size: 14px;
+        }
+
+        .btn {
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 4px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: transparent;
+            transition: 0.2s;
+        }
+
+        .btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-main);
+        }
+
+        .breadcrumb-item {
+            padding: 2px 6px;
+            border-radius: 3px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-muted);
+            transition: color 0.1s;
+        }
+
+        .breadcrumb-item:hover {
+            background: var(--bg-hover);
+            color: var(--text-main);
+        }
+
+        /* --- 5. EDITOR --- */
+        #editor-scroller {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            cursor: text;
+            height: 100%;
+        }
+
+        #editor-canvas {
+            max-width: var(--page-width);
+            width: 100%;
+            margin: 0 auto;
+            padding: 60px 96px 30vh 96px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            transition: max-width 0.3s ease;
+        }
+
+        #editor-canvas.full-width {
+            max-width: 100%;
+            padding-left: 96px;
+            padding-right: 96px;
+        }
+
+        #editor-canvas.locked .content-editable {
+            pointer-events: none;
+        }
+
+        /* TYPOGRAPHY SCALING FIX */
+        /* Normal Mode */
+        #editor-canvas {
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .b-h1 {
+            font-size: 2.2em;
+            font-weight: 700;
+            margin-top: 1.2em;
+            margin-bottom: 0.2em;
+            line-height: 1.3;
+        }
+
+        /* ~35px */
+        .b-h2 {
+            font-size: 1.7em;
+            font-weight: 600;
+            margin-top: 1em;
+            margin-bottom: 0.2em;
+            padding-bottom: 2px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* ~27px */
+        .b-h3 {
+            font-size: 1.35em;
+            font-weight: 600;
+            margin-top: 0.8em;
+            margin-bottom: 0.1em;
+        }
+
+        /* ~21px */
+        .b-text {
+            margin: 2px 0;
+            min-height: 1.5em;
+        }
+
+        /* Small Text Mode */
+        #editor-canvas.small-text {
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        /* H1 will be 13 * 2.2 = 28.6px. H2 = 22.1px. H3 = 17.5px. Logic holds. */
+
+        .page-icon {
+            font-size: 78px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            width: fit-content;
+            transition: opacity 0.2s;
+        }
+
+        .page-icon:hover {
+            opacity: 0.8;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 24px;
+            outline: none;
+            line-height: 1.2;
+            word-break: break-word;
+            background: transparent;
+        }
+
+        .page-title:empty::before {
+            content: 'Untitled';
+            color: var(--text-placeholder);
+            opacity: 1;
+        }
+
+        /* --- 6. BLOCKS --- */
+        .block-container {
+            position: relative;
+            padding: 1px 0;
+            border-radius: 3px;
+        }
+
+        .block-wrapper {
+            display: flex;
+            align-items: flex-start;
+            padding-left: 0;
+            position: relative;
+        }
+
+        /* Drag Handle & Indicators */
+        .drag-handle {
+            position: absolute;
+            left: -24px;
+            top: 0;
+            bottom: 0;
+            width: 24px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            opacity: 0;
+            cursor: grab;
+            color: var(--text-muted);
+            border-radius: 3px;
+            padding-top: 4px;
+        }
+
+        .block-container:hover .drag-handle {
+            opacity: 1;
+        }
+
+        .drag-handle:hover {
+            background-color: var(--bg-block-hover);
+            color: var(--text-main);
+        }
+
+        .drop-target-top {
+            border-top: 2px solid var(--accent-blue);
+        }
+
+        .drop-target-bottom {
+            border-bottom: 2px solid var(--accent-blue);
+        }
+
+        .content-editable {
+            outline: none;
+            min-height: 24px;
+            line-height: 1.5;
+            word-break: break-word;
+            width: 100%;
+            caret-color: var(--caret-color);
+            color: var(--text-main);
+        }
+
+        .content-editable:empty::before {
+            content: attr(placeholder);
+            color: var(--text-placeholder);
+            cursor: text;
+        }
+
+        .b-quote {
+            border-left: 3px solid var(--text-main);
+            padding-left: 14px;
+            font-size: 1.1em;
+            font-style: italic;
+            opacity: 0.9;
+            margin: 4px 0;
+            color: var(--text-muted);
+        }
+
+        .b-todo {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+            margin: 2px 0;
+        }
+
+        .todo-box {
+            margin-top: 3px;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-main);
+            transition: opacity 0.1s;
+        }
+
+        .todo-box:hover {
+            opacity: 0.7;
+        }
+
+        .todo-done {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+
+        .b-callout {
+            background: var(--bg-hover);
+            padding: 16px;
+            border-radius: 4px;
+            display: flex;
+            gap: 12px;
+            border: 1px solid var(--border-color);
+            margin: 4px 0;
+            color: var(--text-main);
+        }
+
+        .b-divider {
+            height: 1px;
+            background: var(--divider-color);
+            width: 100%;
+            margin: 8px 0;
+        }
+
+        /* Toggle Block */
+        .b-toggle-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .b-toggle-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .toggle-triangle {
+            width: 22px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.15s;
+            border-radius: 4px;
+            color: var(--text-muted);
+        }
+
+        .toggle-triangle:hover {
+            background: var(--bg-hover);
+            color: var(--text-main);
+        }
+
+        .toggle-triangle.open {
+            transform: rotate(90deg);
+        }
+
+        /* Page Block (Link) */
+        .b-page-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            margin: 2px 0;
+            border-radius: 3px;
+            cursor: pointer;
+            color: var(--text-main);
+            text-decoration: none;
+            transition: background-color 0.1s;
+            user-select: none;
+        }
+
+        .b-page-link:hover {
+            background-color: var(--bg-hover);
+        }
+
+        .b-page-icon {
+            font-size: 18px;
+        }
+
+        .b-page-title {
+            border-bottom: 1px solid var(--border-color);
+            flex: 1;
+            padding-bottom: 2px;
+        }
+
+        .b-page-link:hover .b-page-title {
+            border-bottom-color: var(--text-main);
+        }
+
+        /* --- 7. POPUP MENUS --- */
+        .popup-menu {
+            position: fixed;
+            background: var(--bg-menu);
+            border-radius: 6px;
+            box-shadow: var(--shadow-menu);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            padding: 6px;
+        }
+
+        .menu-search-box {
+            padding: 4px 6px;
+            margin-bottom: 4px;
+        }
+
+        .menu-search-input {
+            width: 100%;
+            background-color: var(--bg-hover);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 6px 8px;
+            color: var(--text-main);
+            font-size: 13px;
+            outline: none;
+            transition: border 0.1s;
+        }
+
+        .menu-search-input:focus {
+            border-color: var(--accent-blue);
+        }
+
+        .menu-search-input::placeholder {
+            color: var(--text-placeholder);
+        }
+
+        /* Font Selection Cards */
+        .font-selection-row {
+            display: flex;
+            gap: 6px;
+            padding: 0 6px 6px 6px;
+            margin-bottom: 4px;
+        }
+
+        .font-card {
+            flex: 1;
+            padding: 10px 4px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.1s, border 0.1s;
+            background: var(--bg-hover);
+            color: var(--text-main);
+        }
+
+        .font-card:hover {
+            background-color: var(--bg-block-hover);
+            border-color: var(--border-color);
+        }
+
+        .font-card.selected {
+            border: 1px solid var(--accent-blue);
+            background-color: var(--bg-sidebar);
+        }
+
+        .font-card-preview {
+            font-size: 20px;
+            margin-bottom: 4px;
+            line-height: 1;
+        }
+
+        .font-card-label {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-main);
+            min-height: 32px;
+        }
+
+        .menu-item:hover,
+        .menu-item.active {
+            background-color: var(--accent-blue);
+            color: #fff;
+        }
+
+        /* Danger items stay red unless hovered with blue bg? No, usually Notion has grey usage on hover or red. */
+        .menu-item.danger {
+            color: var(--text-main);
+        }
+
+        .menu-item.danger:hover {
+            background-color: rgba(255, 85, 85, 0.1);
+            color: var(--accent-red);
+        }
+
+        .menu-item-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .menu-item:hover .menu-item-right {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .menu-separator {
+            height: 1px;
+            background-color: var(--divider-color);
+            margin: 4px 8px;
+        }
+
+        .menu-footer {
+            padding: 10px;
+            font-size: 11px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-color);
+            margin-top: 4px;
+        }
+
+        /* Toggle Switch */
+        .toggle-switch-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .toggle-track {
+            width: 32px;
+            height: 18px;
+            background-color: var(--bg-hover);
+            border-radius: 10px;
+            position: relative;
+            transition: background 0.2s;
+            border: 1px solid var(--border-color);
+        }
+
+        .toggle-track.on {
+            background-color: var(--accent-blue);
+            border-color: var(--accent-blue);
+        }
+
+        .toggle-thumb {
+            width: 14px;
+            height: 14px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 1px;
+            left: 1px;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .toggle-track.on .toggle-thumb {
+            transform: translateX(14px);
+        }
+
+        /* --- 8. SLASH MENU --- */
+        #slash-menu {
+            width: 300px;
+            max-height: 280px;
+            background: var(--bg-menu);
+            border: 1px solid var(--border-color);
+            padding: 6px;
+            overflow-y: auto;
+            display: none;
+            flex-direction: column;
+        }
+
+        .slash-section-title {
+            padding: 8px 10px 6px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .slash-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--text-main);
+            min-height: 32px;
+            font-size: 14px;
+        }
+
+        .slash-item:hover {
+            background-color: var(--accent-blue);
+            color: #fff;
+        }
+
+        .slash-title {
+            font-weight: 400;
+            flex: 1;
+        }
+
+        /* --- 9. CONTEXT TOOLBAR (SELECTION) --- */
+        #text-selection-toolbar {
+            position: absolute;
+            display: none;
+            background: var(--bg-menu);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-menu);
+            border-radius: 4px;
+            padding: 4px;
+            gap: 4px;
+            z-index: 2000;
+            align-items: center;
+        }
+
+        .toolbar-btn {
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 3px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toolbar-btn:hover {
+            background: var(--bg-hover);
+        }
+
+        .toolbar-btn.active {
+            background: rgba(35, 131, 226, 0.1);
+            color: var(--accent-blue);
+        }
+
+        /* --- 10. SEARCH MODAL --- */
+        #search-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background-color: var(--bg-overlay);
+            backdrop-filter: blur(2px);
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 100px;
+        }
+
+        .search-modal {
+            background-color: var(--bg-modal);
+            width: 600px;
+            max-width: 90vw;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-modal);
+            display: flex;
+            flex-direction: column;
+            max-height: 80vh;
+            overflow: hidden;
+        }
+
+        .search-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-size: 18px;
+            color: var(--text-main);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-placeholder);
+        }
+
+        .search-filter-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .filter-badge {
+            font-size: 12px;
+            color: var(--text-muted);
+            background: var(--bg-hover);
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .filter-badge:hover {
+            color: var(--text-main);
+            background: var(--bg-block-hover);
+        }
+
+        .search-results {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .search-result-item {
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            border-left: 2px solid transparent;
+            color: var(--text-muted);
+        }
+
+        .search-result-item:hover,
+        .search-result-item.selected {
+            background-color: var(--bg-hover);
+            color: var(--text-main);
+        }
+
+        .search-result-item.selected {
+            border-left-color: var(--accent-blue);
+        }
+
+        .search-item-icon {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+            color: var(--text-main);
+            flex-shrink: 0;
+        }
+
+        .search-item-info {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .search-item-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .search-item-breadcrumb {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .search-empty {
+            padding: 32px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .search-footer {
+            padding: 8px 16px;
+            font-size: 11px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-color);
+            background-color: var(--bg-hover);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* --- 11. MOVE TO POPUP --- */
+        #move-to-popup {
+            position: fixed;
+            width: 320px;
+            background-color: var(--bg-menu);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            display: none;
+            flex-direction: column;
+            z-index: 1200;
+        }
+
+        /* ... Move To CSS similar to original but with variables ... */
+        .move-search-box {
+            padding: 8px 10px;
+        }
+
+        .move-search-input {
+            width: 100%;
+            background: var(--bg-hover);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 6px 10px;
+            padding-left: 28px;
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+        }
+
+        .move-section-title {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+            padding: 8px 12px 4px 12px;
+        }
+
+        .move-results-list {
+            max-height: 250px;
+            overflow-y: auto;
+            padding: 0;
+        }
+
+        .move-item {
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-main);
+            transition: background 0.1s;
+        }
+
+        .move-item:hover {
+            background-color: var(--bg-hover);
+        }
+
+        .move-footer {
+            padding: 8px 12px;
+            border-top: 1px solid var(--border-color);
+            font-size: 12px;
+            color: var(--text-muted);
+            background-color: var(--bg-hover);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+
+        .move-footer-avatar {
+            width: 16px;
+            height: 16px;
+            background-color: var(--accent-orange);
+            color: white;
+            border-radius: 2px;
+            font-size: 10px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* --- 12. SIDE PEEK --- */
+        #side-peek {
+            position: fixed;
+            top: 0;
+            right: -500px;
+            width: 500px;
+            height: 100vh;
+            background-color: var(--bg-main);
+            border-left: 1px solid var(--border-color);
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.2);
+            z-index: 950;
+            transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #side-peek.open {
+            right: 0;
+        }
+
+        .side-peek-header {
+            height: 45px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            justify-content: space-between;
+        }
+
+        .side-peek-title {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .side-peek-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 32px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* --- 13. TOAST --- */
+        .toast-notification {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 5px;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            font-size: 14px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: toastFade 3s ease-in-out forwards;
+        }
+
+        @keyframes toastFade {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, 10px);
+            }
+
+            10% {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+
+            90% {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -10px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar">
+        <div class="sidebar-user" onclick="app.toggleTheme()">
+            <div class="sidebar-emoji-icon">👤</div>
+            <div class="truncate" style="flex:1;">My Workspace</div>
+            <div
+                style="font-size:10px; opacity:0.5; border:1px solid currentColor; padding:1px 3px; border-radius:3px;">
+                THEME</div>
+        </div>
+
+        <div class="sidebar-menu-section">
+            <div class="sidebar-btn" onclick="app.toggleSearch()">
+                <span class="sidebar-emoji-icon">🔍</span> <span>Search</span>
+            </div>
+            <div class="sidebar-btn" onclick="app.showToast('Inbox empty')">
+                <span class="sidebar-emoji-icon">📥</span> <span>Inbox</span>
+            </div>
+            <div class="sidebar-btn" onclick="app.showToast('Settings unavailable')">
+                <span class="sidebar-emoji-icon">⚙️</span> <span>Settings</span>
+            </div>
+            <div class="sidebar-btn" onclick="app.toggleSidebarTrash()">
+                <span class="sidebar-emoji-icon">🗑️</span> <span>Trash</span>
+            </div>
+        </div>
+
+        <div class="sidebar-tree">
+            <!-- Favorites Section -->
+            <div id="favorites-section" class="hidden">
+                <div class="sidebar-section-header">
+                    <span class="sidebar-section-title">Favorites</span>
+                    <div class="sidebar-header-actions">
+                        <div class="sidebar-header-action" onclick="app.createNewPage(null, true)"
+                            title="Add page to favorites"><i data-lucide="plus" width="14"></i></div>
+                    </div>
+                </div>
+                <div id="favorites-list" class="favorites-list"></div>
+            </div>
+
+            <!-- Private Section -->
+            <div class="sidebar-section-header">
+                <span class="sidebar-section-title">Private</span>
+                <div class="sidebar-header-actions">
+                    <div class="sidebar-header-action" onclick="app.createNewPage(null)" title="Add a page"><i
+                            data-lucide="plus" width="14"></i></div>
+                </div>
+            </div>
+
+            <div id="page-list" class="pages-list" style="padding-bottom: 40px;"></div>
+        </div>
+    </aside>
+
+    <!-- MAIN VIEWPORT -->
+    <main id="main-viewport">
+        <!-- Header -->
+        <header id="header">
+            <div style="display: flex; align-items: center; gap: 4px;">
+                <button class="btn" onclick="app.toggleSidebar()"><i data-lucide="menu" width="18"
+                        id="sidebar-toggle-icon"></i></button>
+                <div id="breadcrumbs" style="display: flex; align-items: center; margin-left: 4px;"></div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 2px;">
+                <button class="btn" onclick="app.showToast('Share modal would open')"><i data-lucide="share-2"
+                        width="18"></i></button>
+                <button class="btn" onclick="app.showToast('Comments toggled')"><i data-lucide="message-square"
+                        width="18"></i></button>
+                <button class="btn" onclick="app.toggleFavorite()"><i data-lucide="star" width="18"
+                        id="header-star-icon"></i></button>
+                <!-- TOP RIGHT MENU TRIGGER -->
+                <button class="btn" id="more-actions-btn" onclick="app.toggleMoreActionsMenu(event)"><i
+                        data-lucide="more-horizontal" width="18"></i></button>
+            </div>
+        </header>
+
+        <!-- Editor Scroller -->
+        <div id="editor-scroller">
+            <div id="editor-canvas">
+                <!-- Page Icon -->
+                <div class="page-icon" id="page-icon" onclick="app.randomizeIcon()">📄</div>
+                <!-- Page Title -->
+                <div class="page-title" id="page-title" contenteditable="true" placeholder="Untitled"></div>
+
+                <!-- Blocks Area -->
+                <div id="blocks-container"></div>
+
+                <!-- Spacer for bottom clicking -->
+                <div style="flex:1; min-height:100px; cursor:text;" onclick="app.handleBottomClick(event)"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- SEARCH MODAL -->
+    <div id="search-overlay" onclick="app.toggleSearch()">
+        <div class="search-modal" onclick="event.stopPropagation()">
+            <div class="search-header">
+                <i data-lucide="search" style="color: var(--text-muted);" id="search-icon-display"></i>
+                <input type="text" id="search-input" class="search-input" placeholder="Search pages..."
+                    autocomplete="off">
+            </div>
+            <div class="search-filter-row">
+                <div class="filter-badge"><i data-lucide="arrow-up-down" width="12"></i> Sort</div>
+                <div class="filter-badge"><i data-lucide="type" width="12"></i> Title only</div>
+            </div>
+            <div class="search-results" id="search-results-list"></div>
+            <div class="search-footer">
+                <span><kbd style="background:var(--bg-block-hover); padding:1px 4px; border-radius:3px;">↑</kbd> <kbd
+                        style="background:var(--bg-block-hover); padding:1px 4px; border-radius:3px;">↓</kbd> to
+                    navigate</span>
+                <span><kbd style="background:var(--bg-block-hover); padding:1px 4px; border-radius:3px;">Enter</kbd> to
+                    open</span>
+                <span><kbd style="background:var(--bg-block-hover); padding:1px 4px; border-radius:3px;">Esc</kbd> to
+                    close</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MOVE TO POPUP -->
+    <div id="move-to-popup">
+        <div class="move-search-box">
+            <input type="text" class="move-search-input" id="move-search-input" placeholder="Move page to...">
+        </div>
+        <div class="move-section-title">Suggested</div>
+        <div id="move-results-list" class="move-results-list"></div>
+        <div class="move-footer">
+            <div class="move-footer-avatar">N</div>
+            <span style="flex:1;">My Workspace</span>
+        </div>
+    </div>
+
+    <!-- SLASH MENU -->
+    <div id="slash-menu" class="popup-menu"></div>
+
+    <!-- BLOCK OPTIONS MENU -->
+    <div id="block-menu" class="popup-menu" style="width: 200px;">
+        <div class="menu-item" onclick="app.deleteBlockAction()"><i data-lucide="trash-2" width="16"></i>
+            <span>Delete</span>
+        </div>
+        <div class="menu-item" onclick="app.duplicateBlockAction()"><i data-lucide="copy" width="16"></i>
+            <span>Duplicate</span>
+        </div>
+        <div class="menu-separator"></div>
+        <div class="menu-label" style="padding: 8px 10px; font-size: 11px; font-weight: 600; color: var(--text-muted);">
+            TURN INTO</div>
+        <div class="menu-item" onclick="app.turnBlockInto('text')"><i data-lucide="type" width="16"></i> Text</div>
+        <div class="menu-item" onclick="app.turnBlockInto('h1')"><i data-lucide="heading" width="16"></i> Heading 1
+        </div>
+        <div class="menu-item" onclick="app.turnBlockInto('h2')"><i data-lucide="heading" width="16"></i> Heading 2
+        </div>
+        <div class="menu-item" onclick="app.turnBlockInto('h3')"><i data-lucide="heading" width="16"></i> Heading 3
+        </div>
+        <div class="menu-item" onclick="app.turnBlockInto('todo')"><i data-lucide="check-square" width="16"></i> To-do
+        </div>
+        <div class="menu-item" onclick="app.turnBlockInto('toggle')"><i data-lucide="chevron-right" width="16"></i>
+            Toggle List</div>
+        <div class="menu-item" onclick="app.turnBlockInto('page')"><i data-lucide="file" width="16"></i> Page</div>
+    </div>
+
+    <!-- TOP RIGHT MENU -->
+    <div id="more-actions-menu" class="popup-menu" style="width: 280px;">
+        <div class="menu-search-box">
+            <input type="text" class="menu-search-input" placeholder="Search actions...">
+        </div>
+
+        <div class="font-selection-row">
+            <div class="font-card" onclick="app.toggleFont('default')" id="font-card-default">
+                <div class="font-card-preview" style="font-family: 'Inter', sans-serif;">Ag</div>
+                <div class="font-card-label">Default</div>
+            </div>
+            <div class="font-card" onclick="app.toggleFont('serif')" id="font-card-serif">
+                <div class="font-card-preview" style="font-family: 'Lora', serif;">Ag</div>
+                <div class="font-card-label">Serif</div>
+            </div>
+            <div class="font-card" onclick="app.toggleFont('mono')" id="font-card-mono">
+                <div class="font-card-preview" style="font-family: 'Roboto Mono', monospace;">Ag</div>
+                <div class="font-card-label">Mono</div>
+            </div>
+        </div>
+
+        <div class="menu-item" onclick="app.sidebarActionCopyLink()">
+            <i data-lucide="link" width="16"></i> <span>Copy link</span>
+        </div>
+        <div class="menu-item" onclick="app.toggleTheme()">
+            <i data-lucide="moon" width="16"></i> <span>Toggle Dark Mode</span>
+        </div>
+        <div class="menu-item" onclick="app.sidebarDuplicatePage()">
+            <i data-lucide="copy" width="16"></i> <span>Duplicate</span>
+            <span class="menu-item-right">Ctrl+D</span>
+        </div>
+        <div class="menu-item" onclick="app.exportPage()">
+            <i data-lucide="download" width="16"></i> <span>Export JSON</span>
+        </div>
+        <div class="menu-item" onclick="app.deleteCurrentPage()">
+            <i data-lucide="trash-2" width="16"></i> <span>Move to Trash</span>
+        </div>
+
+        <div class="menu-separator"></div>
+
+        <div class="menu-item" onclick="app.toggleStyle('smallText')">
+            <div class="toggle-switch-container">
+                <span class="text-sm">Small text</span>
+                <div class="toggle-track" id="toggle-track-smallText">
+                    <div class="toggle-thumb"></div>
+                </div>
+            </div>
+        </div>
+        <div class="menu-item" onclick="app.toggleStyle('fullWidth')">
+            <div class="toggle-switch-container">
+                <span class="text-sm">Full width</span>
+                <div class="toggle-track" id="toggle-track-fullWidth">
+                    <div class="toggle-thumb"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-separator"></div>
+
+        <div class="menu-item" onclick="app.lockPage()">
+            <div class="toggle-switch-container">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <i data-lucide="lock" width="16"></i> <span>Lock page</span>
+                </div>
+                <div class="toggle-track" id="toggle-track-locked">
+                    <div class="toggle-thumb"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-footer">
+            Last edited by You just now
+        </div>
+    </div>
+
+    <!-- SIDEBAR CONTEXT MENU -->
+    <div id="sidebar-menu" class="popup-menu" style="width: 260px;">
+        <div class="menu-item" onclick="app.sidebarActionFavorite()" id="ctx-fav-btn">
+            <i data-lucide="star" width="16"></i> <span id="ctx-fav-text">Add to Favorites</span>
+        </div>
+        <div class="menu-separator"></div>
+        <div class="menu-item" onclick="app.sidebarActionCopyLink()">
+            <i data-lucide="link" width="16"></i> <span>Copy link</span>
+        </div>
+        <div class="menu-item" onclick="app.sidebarDuplicatePage()">
+            <i data-lucide="copy" width="16"></i> <span>Duplicate</span>
+            <span class="menu-item-right">Ctrl+D</span>
+        </div>
+        <div class="menu-item" onclick="app.sidebarRenamePage()">
+            <i data-lucide="edit-3" width="16"></i> <span>Rename</span>
+            <span class="menu-item-right">Ctrl+Shift+R</span>
+        </div>
+        <div class="menu-item" onclick="app.sidebarActionMoveTo()">
+            <i data-lucide="arrow-right" width="16"></i> <span>Move to</span>
+            <span class="menu-item-right">Ctrl+Shift+P</span>
+        </div>
+        <div class="menu-item danger" onclick="app.sidebarDeletePage()">
+            <i data-lucide="trash-2" width="16"></i> <span>Move to Trash</span>
+        </div>
+        <div class="menu-separator"></div>
+        <div class="menu-item" onclick="app.sidebarActionOpenNewTab()">
+            <i data-lucide="arrow-up-right" width="16"></i> <span>Open in new tab</span>
+        </div>
+        <div class="menu-item" onclick="app.sidebarActionOpenSidePeek()">
+            <i data-lucide="panel-right" width="16"></i> <span>Open in side peek</span>
+            <span class="menu-item-right">Alt+Click</span>
+        </div>
+    </div>
+
+    <!-- TEXT SELECTION TOOLBAR -->
+    <div id="text-selection-toolbar">
+        <button class="toolbar-btn" onclick="app.formatText('bold')" title="Bold"><i data-lucide="bold"
+                width="14"></i></button>
+        <button class="toolbar-btn" onclick="app.formatText('italic')" title="Italic"><i data-lucide="italic"
+                width="14"></i></button>
+        <button class="toolbar-btn" onclick="app.formatText('underline')" title="Underline"><i data-lucide="underline"
+                width="14"></i></button>
+        <button class="toolbar-btn" onclick="app.formatText('strikeThrough')" title="Strikethrough"><i
+                data-lucide="strikethrough" width="14"></i></button>
+        <div style="width:1px;height:16px;background:var(--border-color);margin:0 4px;"></div>
+        <button class="toolbar-btn" onclick="app.formatText('foreColor', '#d44c47')" style="color:var(--accent-red)"
+            title="Red">A</button>
+        <button class="toolbar-btn" onclick="app.formatText('foreColor', '#2383e2')" style="color:var(--accent-blue)"
+            title="Blue">A</button>
+        <button class="toolbar-btn" onclick="app.formatText('foreColor', 'var(--text-main)')" title="Default Color"><i
+                data-lucide="x" width="14"></i></button>
+    </div>
+
+    <!-- SIDE PEEK -->
+    <aside id="side-peek">
+        <div class="side-peek-header">
+            <div class="btn" onclick="app.closeSidePeek()"><i data-lucide="chevrons-right" width="18"></i></div>
+            <div class="side-peek-title">Page Preview</div>
+            <div class="btn" onclick="app.openSidePeekFull()"><i data-lucide="maximize-2" width="16"></i></div>
+        </div>
+        <div class="side-peek-content" id="side-peek-body"></div>
+    </aside>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast-notification" class="toast-notification">Notification</div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        const uid = () => 'id-' + Math.random().toString(36).substr(2, 9);
+
+        // Helper: Fuzzy Score for Search
+        function fuzzyScore(source, target) {
+            if (!source || !target) return Infinity;
+            const s = source.toLowerCase();
+            const t = target.toLowerCase();
+            let score = 0; let t_ptr = 0;
+            for (let s_ptr = 0; s_ptr < s.length; s_ptr++) { if (t_ptr < t.length && s[s_ptr] === t[t_ptr]) { t_ptr++; } else { score += 1; } }
+            if (t_ptr < t.length) score += (t.length - t_ptr) * 10;
+            if (s[0] !== t[0]) score += 2;
+            return score;
+        }
+
+        class NotionApp {
+            constructor() {
+                this.state = JSON.parse(localStorage.getItem('notion_ultimate_refactor_v1')) || {
+                    pages: {
+                        'root': {
+                            id: 'root', type: 'page', title: 'Welcome to Refactored Notion', icon: '👋', parentId: null, collapsed: false,
+                            smallText: false, fullWidth: false, locked: false, favorite: false, font: 'default',
+                            blocks: ['b1', 'b2', 'b3', 'b4']
+                        }
+                    },
+                    blocks: {
+                        'b1': { id: 'b1', type: 'h1', content: 'Notion Clone Refactored' },
+                        'b2': { id: 'b2', type: 'text', content: 'This version includes Drag & Drop, recursive pages, and a text selection toolbar!' },
+                        'b3': { id: 'b3', type: 'todo', content: 'Try dragging this block around', checked: false },
+                        'b4': { id: 'b4', type: 'callout', content: 'Type /page to create a new sub-page inline.' }
+                    },
+                    activePageId: 'root',
+                    trash: [],
+                    theme: 'light' // default
+                };
+
+                this.slashMenuOpen = false;
+                this.activeBlockId = null;
+                this.contextBlockId = null;
+                this.contextPageId = null;
+                this.draggedBlockId = null;
+
+                // Search State
+                this.searchOpen = false;
+                this.searchResults = [];
+                this.searchSelectedIndex = 0;
+                this.sortedPagesCache = [];
+
+                // Move State
+                this.pageToMoveId = null;
+
+                this.sidebarOpen = true;
+
+                this.init();
+            }
+
+            init() {
+                this.applyTheme();
+                this.renderSidebar();
+                this.loadPage(this.state.activePageId);
+                this.setupEventListeners();
+                this.setupSelectionToolbar();
+                lucide.createIcons();
+            }
+
+            save() {
+                localStorage.setItem('notion_ultimate_refactor_v1', JSON.stringify(this.state));
+            }
+
+            // --- THEME ---
+            toggleTheme() {
+                this.state.theme = this.state.theme === 'dark' ? 'light' : 'dark';
+                this.applyTheme();
+                this.save();
+            }
+
+            applyTheme() {
+                if (this.state.theme === 'dark') {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                } else {
+                    document.documentElement.removeAttribute('data-theme');
+                }
+            }
+
+            toggleSidebarTrash() {
+                this.showToast(`Trash contains ${this.state.trash ? this.state.trash.length : 0} items`);
+            }
+
+            // --- PAGE MANAGEMENT ---
+            loadPage(pageId) {
+                const page = this.state.pages[pageId];
+                if (!page) {
+                    // Fallback to first available or create one
+                    const first = Object.keys(this.state.pages)[0];
+                    if (first) this.loadPage(first);
+                    return;
+                }
+                this.state.activePageId = pageId;
+
+                // Update Title
+                const titleEl = document.getElementById('page-title');
+                titleEl.innerText = page.title;
+                titleEl.contentEditable = !page.locked;
+                titleEl.setAttribute('data-page-id', pageId); // for sync
+
+                titleEl.oninput = (e) => {
+                    page.title = e.target.innerText;
+                    this.save();
+                    this.renderSidebar();
+                    // Sync Title with Page Block if it exists in the parent
+                    if (page.parentId) {
+                        // Find checks for blocks in parent that link to this page and update them? 
+                        // Visual update happens on re-render. To make it instant in other views we'd need complex binding.
+                        // For now Sidebar updates is enough.
+                    }
+                };
+
+                titleEl.onkeydown = (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const firstBlock = document.querySelector('.content-editable');
+                        if (firstBlock) firstBlock.focus();
+                        else this.addBlock(null, 'text');
+                    }
+                };
+
+                // Update Icon
+                document.getElementById('page-icon').innerText = page.icon || '📄';
+
+                // Styles (Full Width / Small Text / Font)
+                const canvas = document.getElementById('editor-canvas');
+                canvas.className = '';
+                if (page.fullWidth) canvas.classList.add('full-width');
+                if (page.smallText) canvas.classList.add('small-text');
+                if (page.locked) canvas.classList.add('locked');
+
+                // Fonts
+                canvas.classList.remove('font-serif', 'font-mono');
+                if (page.font === 'serif') canvas.classList.add('font-serif');
+                else if (page.font === 'mono') canvas.classList.add('font-mono');
+
+                // Header Star
+                const star = document.getElementById('header-star-icon');
+                if (page.favorite) {
+                    star.setAttribute('fill', 'var(--accent-orange)');
+                    star.setAttribute('color', 'var(--accent-orange)');
+                } else {
+                    star.setAttribute('fill', 'none');
+                    star.setAttribute('color', 'currentColor');
+                }
+
+                // Breadcrumbs
+                const bcContainer = document.getElementById('breadcrumbs');
+                bcContainer.innerHTML = '';
+                let crumbs = [];
+                let curr = page;
+                while (curr) {
+                    crumbs.unshift(curr);
+                    curr = this.state.pages[curr.parentId];
+                }
+                crumbs.forEach((p, idx) => {
+                    const el = document.createElement('div');
+                    el.className = 'breadcrumb-item';
+                    el.innerHTML = `<span style="font-size:16px;">${p.icon}</span> <span class="truncate" style="max-width:100px;">${p.title || 'Untitled'}</span>`;
+                    el.onclick = () => this.loadPage(p.id);
+                    bcContainer.appendChild(el);
+                    if (idx < crumbs.length - 1) {
+                        const slash = document.createElement('span');
+                        slash.innerText = '/';
+                        slash.style.color = 'var(--text-muted)';
+                        bcContainer.appendChild(slash);
+                    }
+                });
+
+                // Render Blocks
+                const container = document.getElementById('blocks-container');
+                container.innerHTML = '';
+                page.blocks.forEach(blockId => {
+                    if (this.state.blocks[blockId]) {
+                        container.appendChild(this.renderBlock(this.state.blocks[blockId]));
+                    }
+                });
+
+                this.save();
+                this.renderSidebar();
+                lucide.createIcons();
+            }
+
+            createNewPage(parentId = null, isFavorite = false) {
+                const newId = uid();
+                const newPage = {
+                    id: newId, type: 'page', title: '', icon: '📄', parentId: parentId, collapsed: false,
+                    smallText: false, fullWidth: false, locked: false, favorite: isFavorite, font: 'default',
+                    blocks: []
+                };
+                this.state.pages[newId] = newPage;
+                if (parentId && this.state.pages[parentId]) {
+                    this.state.pages[parentId].collapsed = false;
+                    // FIX 1: Add Page Block to Parent
+                    const blockId = uid();
+                    this.state.blocks[blockId] = { id: blockId, type: 'page', pageId: newId };
+                    this.state.pages[parentId].blocks.push(blockId);
+                }
+                this.save();
+                this.renderSidebar();
+                this.loadPage(newId);
+                setTimeout(() => document.getElementById('page-title').focus(), 50);
+                return newId; // Return for usage in block creation
+            }
+
+            deleteCurrentPage() {
+                const id = this.state.activePageId;
+                if (Object.keys(this.state.pages).length <= 1) return alert("Cannot delete the only page.");
+                if (confirm("Move this page to Trash?")) {
+                    this.moveToTrash(id);
+                    this.closeMenus();
+                    // Load parent if exists, else first
+                    const parent = this.state.pages[id] ? this.state.pages[this.state.pages[id].parentId] : null;
+                    if (parent) this.loadPage(parent.id);
+                    else this.loadPage(Object.keys(this.state.pages)[0]);
+                }
+            }
+
+            moveToTrash(pageId) {
+                const page = this.state.pages[pageId];
+                if (!page) return;
+
+                // Recursively delete children
+                const children = Object.values(this.state.pages).filter(p => p.parentId === pageId);
+                children.forEach(c => this.moveToTrash(c.id));
+
+                if (!this.state.trash) this.state.trash = [];
+                this.state.trash.push(page);
+                delete this.state.pages[pageId];
+                this.save();
+                this.updateTrashCount();
+            }
+
+            exportPage() {
+                const page = this.state.pages[this.state.activePageId];
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(page, null, 2));
+                const anchor = document.createElement('a');
+                anchor.setAttribute("href", dataStr);
+                anchor.setAttribute("download", (page.title || "page") + ".json");
+                document.body.appendChild(anchor);
+                anchor.click();
+                anchor.remove();
+                this.closeMenus();
+            }
+
+            // --- CLICK LOGIC ---
+            handleGlobalClick(e) {
+                // Close Popups
+                if (!e.target.closest('.popup-menu') && !e.target.closest('.btn') && !e.target.closest('.drag-handle') && !e.target.closest('.action-btn') && !e.target.closest('.sidebar-header-action') && !e.target.closest('#move-to-popup') && !e.target.closest('#text-selection-toolbar')) {
+                    this.closeMenus();
+                }
+
+                // Close Side Peek
+                if (!e.target.closest('#side-peek') && !e.target.closest('.menu-item')) {
+                    this.closeSidePeek();
+                }
+            }
+
+            handleBottomClick(e) {
+                if (e.target === e.currentTarget) {
+                    // Clicked on the spacer
+                    const page = this.state.pages[this.state.activePageId];
+                    if (!page.locked) {
+                        this.addBlock(null, 'text'); // Add to end
+                    }
+                }
+            }
+
+            closeMenus() {
+                document.querySelectorAll('.popup-menu').forEach(el => el.style.display = 'none');
+                document.getElementById('move-to-popup').style.display = 'none';
+                document.getElementById('text-selection-toolbar').style.display = 'none';
+                this.slashMenuOpen = false;
+            }
+
+            // --- SELECTION TOOLBAR ---
+            setupSelectionToolbar() {
+                const handleSelection = () => {
+                    const selection = window.getSelection();
+                    const toolbar = document.getElementById('text-selection-toolbar');
+
+                    if (selection.isCollapsed || !document.getElementById('editor-canvas').contains(selection.anchorNode)) {
+                        toolbar.style.display = 'none';
+                        return;
+                    }
+
+                    const range = selection.getRangeAt(0);
+                    const rect = range.getBoundingClientRect();
+
+                    if (rect.width > 0 && selection.toString().length > 0) {
+                        toolbar.style.display = 'flex';
+                        toolbar.style.top = (rect.top - 40 + window.scrollY) + 'px'; // 40px above
+                        toolbar.style.left = (rect.left + (rect.width / 2) - (toolbar.offsetWidth / 2)) + 'px';
+                    } else {
+                        toolbar.style.display = 'none';
+                    }
+                };
+
+                // FIX 3: Use mouseup/keyup instead of selectionchange to avoid flicker
+                document.addEventListener('mouseup', handleSelection);
+                document.addEventListener('keyup', (e) => {
+                    if (e.shiftKey && (e.key.startsWith('Arrow') || e.key === 'Home' || e.key === 'End')) {
+                        handleSelection();
+                    }
+                });
+                document.addEventListener('mousedown', (e) => {
+                    if (!e.target.closest('#text-selection-toolbar')) {
+                        document.getElementById('text-selection-toolbar').style.display = 'none';
+                    }
+                });
+
+                // Hide on scroll to prevent glitching
+                document.addEventListener('scroll', () => {
+                    document.getElementById('text-selection-toolbar').style.display = 'none';
+                }, true);
+            }
+
+            formatText(command, value = null) {
+                document.execCommand(command, false, value);
+                // Keep toolbar open? simpler to let selectionchange handle logic
+            }
+
+            // --- BLOCK RENDERER ---
+            renderBlock(block) {
+                const container = document.createElement('div');
+                container.className = 'block-container';
+                container.setAttribute('data-id', block.id);
+                // FIX 2: Handle Driven Drag
+                // Remove generic draggable=true from container to prevent accidental drags
+                // We will handle dragstart on the handle itself
+
+                this.setupDragEvents(container, block);
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'block-wrapper';
+
+                const handle = document.createElement('div');
+                handle.className = 'drag-handle';
+                handle.innerHTML = `<i data-lucide="grip-vertical" width="14" height="14"></i>`;
+                handle.onclick = (e) => { e.stopPropagation(); this.openBlockMenu(e, block.id); };
+                // Enable dragging on handle
+                handle.setAttribute('draggable', true);
+                // Handle drag start specifically for the handle
+                handle.addEventListener('dragstart', (e) => {
+                    this.draggedBlockId = block.id;
+                    container.style.opacity = '0.5';
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', block.id);
+                    // Set the ghost image to the container (the whole block), not just the handle
+                    e.dataTransfer.setDragImage(container, 0, 0);
+                });
+                handle.addEventListener('dragend', () => container.style.opacity = '1');
+
+                const content = document.createElement('div');
+                content.style.flex = 1; content.style.minWidth = 0;
+
+                // Block Type Logic
+                if (block.type === 'text') this.renderText(content, block, 'b-text', "Type '/' for commands");
+                else if (block.type === 'h1') this.renderText(content, block, 'b-h1', "Heading 1");
+                else if (block.type === 'h2') this.renderText(content, block, 'b-h2', "Heading 2");
+                else if (block.type === 'h3') this.renderText(content, block, 'b-h3', "Heading 3");
+                else if (block.type === 'quote') this.renderText(content, block, 'b-quote', "Empty quote");
+                else if (block.type === 'todo') {
+                    content.className = 'b-todo';
+                    const checkbox = document.createElement('div');
+                    checkbox.className = 'todo-box';
+                    checkbox.innerHTML = block.checked ?
+                        `<i data-lucide="check-square" width="16" style="color:var(--text-main);"></i>` :
+                        `<i data-lucide="square" width="16"></i>`;
+                    checkbox.onclick = () => { block.checked = !block.checked; this.save(); this.loadPage(this.state.activePageId); };
+                    content.appendChild(checkbox);
+                    content.appendChild(this.createEditable(block, block.checked ? 'todo-done' : '', "To-do"));
+                }
+                else if (block.type === 'callout') {
+                    content.className = 'b-callout';
+                    content.innerHTML = `<div style="font-size: 20px; margin-top: 2px;">💡</div>`;
+                    content.appendChild(this.createEditable(block, '', "Callout text..."));
+                }
+                else if (block.type === 'divider') content.className = 'b-divider';
+                else if (block.type === 'toggle') {
+                    content.className = 'b-toggle-container';
+                    const header = document.createElement('div');
+                    header.className = 'b-toggle-header';
+
+                    const tri = document.createElement('div');
+                    tri.className = `toggle-triangle ${block.collapsed ? '' : 'open'}`;
+                    tri.innerHTML = `<i data-lucide="play" width="10" fill="currentColor"></i>`;
+                    tri.onclick = () => { block.collapsed = !block.collapsed; this.save(); this.loadPage(this.state.activePageId); };
+
+                    header.appendChild(tri);
+                    header.appendChild(this.createEditable(block, '', "Toggle list"));
+                    content.appendChild(header);
+
+                    if (!block.collapsed && block.children) {
+                        const childContainer = document.createElement('div');
+                        childContainer.style.paddingLeft = '24px';
+                        block.children.forEach(cid => {
+                            if (this.state.blocks[cid]) childContainer.appendChild(this.renderBlock(this.state.blocks[cid]));
+                        });
+                        content.appendChild(childContainer);
+                    }
+                }
+                else if (block.type === 'page') {
+                    // NEW: Page Block
+                    const linkedPage = this.state.pages[block.pageId];
+                    if (linkedPage) {
+                        content.className = 'b-page-link';
+                        content.innerHTML = `
+                             <span class="b-page-icon">${linkedPage.icon || '📄'}</span>
+                             <span class="b-page-title">${linkedPage.title || 'Untitled'}</span>
+                        `;
+                        content.onclick = (e) => {
+                            e.stopPropagation();
+                            this.loadPage(block.pageId);
+                        };
+                    } else {
+                        // Broken link or deleted
+                        content.innerHTML = `<span style="color:red;">[Deleted Page]</span>`;
+                    }
+                }
+
+                wrapper.appendChild(handle);
+                wrapper.appendChild(content);
+                container.appendChild(wrapper);
+
+                lucide.createIcons({ root: container });
+                return container;
+            }
+
+            renderText(container, block, cls, placeholder) {
+                container.appendChild(this.createEditable(block, cls, placeholder));
+            }
+
+            createEditable(block, cls, placeholder) {
+                const el = document.createElement('div');
+                el.className = `content-editable ${cls}`;
+                el.contentEditable = !this.state.pages[this.state.activePageId].locked;
+                el.innerText = block.content || '';
+                el.setAttribute('placeholder', placeholder);
+
+                el.oninput = (e) => {
+                    block.content = el.innerText;
+                    this.save();
+                    if (block.content.startsWith('/')) {
+                        const range = window.getSelection().getRangeAt(0);
+                        const rect = range.getBoundingClientRect();
+                        this.openSlashMenu(rect, block.id, block.content.substring(1));
+                    } else {
+                        // Close slash menu only if we are not typing a slash command
+                        //Actually, standard notion closes it if you continue typing non-command logic? 
+                        // For simplicity, we keep it open if it starts with /
+                        if (!block.content.startsWith('/')) this.closeMenus();
+                    }
+                };
+
+                el.onkeydown = (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.addBlock(block.id, 'text');
+                    }
+                    if (e.key === 'Backspace' && !el.innerText) {
+                        e.preventDefault();
+                        this.deleteBlock(block.id);
+                    }
+                };
+                el.onfocus = () => this.activeBlockId = block.id;
+                return el;
+            }
+
+            // --- DRAG events ---
+            setupDragEvents(container, block) {
+                // Remove container.dragstart as we now use handle.dragstart
+
+                container.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation(); // Prevent bubbling causing flickering
+
+                    const rect = container.getBoundingClientRect();
+                    const midY = rect.top + rect.height / 2;
+
+                    container.classList.remove('drop-target-top', 'drop-target-bottom');
+
+                    if (e.clientY < midY) {
+                        container.classList.add('drop-target-top');
+                    } else {
+                        container.classList.add('drop-target-bottom');
+                    }
+                });
+
+                container.addEventListener('dragleave', (e) => {
+                    // Check if we really left the container
+                    if (!container.contains(e.relatedTarget)) {
+                        container.classList.remove('drop-target-top', 'drop-target-bottom');
+                    }
+                });
+
+                container.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const isTop = container.classList.contains('drop-target-top');
+                    container.classList.remove('drop-target-top', 'drop-target-bottom');
+
+                    if (this.draggedBlockId !== block.id) {
+                        this.moveBlock(this.draggedBlockId, block.id, isTop);
+                    }
+                });
+            }
+
+            moveBlock(srcId, targetId, before) {
+                const page = this.state.pages[this.state.activePageId];
+                const blocks = page.blocks;
+
+                const srcIdx = blocks.indexOf(srcId);
+                if (srcIdx === -1) return; // Should not happen
+
+                // Remove src
+                blocks.splice(srcIdx, 1);
+
+                // Calc new target index
+                let tgtIdx = blocks.indexOf(targetId);
+                if (tgtIdx === -1) {
+                    // Fallback, append to end
+                    blocks.push(srcId);
+                } else {
+                    if (!before) tgtIdx += 1;
+                    blocks.splice(tgtIdx, 0, srcId);
+                }
+
+                this.save();
+                this.loadPage(this.state.activePageId);
+            }
+
+            // --- MENUS & ACTIONS ---
+            openBlockMenu(e, id) {
+                this.closeMenus();
+                this.contextBlockId = id;
+                const menu = document.getElementById('block-menu');
+                menu.style.display = 'flex';
+                let left = e.pageX; let top = e.pageY;
+                if (top + 200 > window.innerHeight) top -= 200;
+                menu.style.left = left + 'px';
+                menu.style.top = top + 'px';
+            }
+            deleteBlockAction() { this.deleteBlock(this.contextBlockId); this.closeMenus(); }
+            duplicateBlockAction() {
+                const page = this.state.pages[this.state.activePageId];
+                const original = this.state.blocks[this.contextBlockId];
+                const newId = uid();
+                this.state.blocks[newId] = JSON.parse(JSON.stringify(original));
+                this.state.blocks[newId].id = newId;
+                const idx = page.blocks.indexOf(this.contextBlockId);
+                page.blocks.splice(idx + 1, 0, newId);
+                this.save(); this.loadPage(this.state.activePageId);
+                this.closeMenus();
+            }
+            turnBlockInto(type) {
+                const block = this.state.blocks[this.contextBlockId];
+
+                if (type === 'page') {
+                    // Turn X into PAGE
+                    // 1. Create new page
+                    const newPageId = this.createNewPage(this.state.activePageId);
+                    const newPage = this.state.pages[newPageId];
+
+                    // 2. Set title from block content
+                    newPage.title = block.content;
+
+                    // 3. Convert block to page link
+                    block.type = 'page';
+                    block.pageId = newPageId;
+                    delete block.content; // Content is now in the page title? Or just unused.
+
+                    this.save();
+                    this.loadPage(this.state.activePageId); // Re-render current page
+                    this.renderSidebar(); // Update sidebar
+                    this.closeMenus();
+                    return;
+                }
+
+                block.type = type;
+                if (type === 'todo') block.checked = false;
+                if (type === 'toggle') { block.collapsed = false; block.children = []; }
+                this.save(); this.loadPage(this.state.activePageId);
+                this.closeMenus();
+            }
+
+            openSlashMenu(rect, id, filter) {
+                this.contextBlockId = id;
+                const menu = document.getElementById('slash-menu');
+                this.slashMenuOpen = true;
+
+                const options = [
+                    { label: 'Text', icon: 'type', type: 'text' },
+                    { label: 'Heading 1', icon: 'heading', type: 'h1' },
+                    { label: 'Heading 2', icon: 'heading', type: 'h2' },
+                    { label: 'Heading 3', icon: 'heading', type: 'h3' },
+                    { label: 'To-do List', icon: 'check-square', type: 'todo' },
+                    { label: 'Toggle List', icon: 'chevron-right', type: 'toggle' },
+                    { label: 'Page', icon: 'file', type: 'page' }, // NEW
+                    { label: 'Quote', icon: 'quote', type: 'quote' },
+                    { label: 'Callout', icon: 'info', type: 'callout' },
+                    { label: 'Divider', icon: 'minus', type: 'divider' }
+                ];
+
+                const matches = options.filter(o => o.label.toLowerCase().includes(filter.toLowerCase()));
+
+                menu.innerHTML = `<div class="slash-section-title">Basic</div>`;
+                matches.forEach(opt => {
+                    const item = document.createElement('div');
+                    item.className = 'slash-item';
+                    item.innerHTML = `
+                        <i data-lucide="${opt.icon}" width="16"></i>
+                        <span class="slash-title">${opt.label}</span>
+                    `;
+                    item.onclick = () => {
+                        if (opt.type === 'page') {
+                            // Special handler for inline page creation
+                            const blk = this.state.blocks[id];
+                            const newPageId = this.createNewPage(this.state.activePageId);
+                            blk.type = 'page';
+                            blk.pageId = newPageId;
+                            blk.content = '';
+                            this.save();
+                            this.loadPage(this.state.activePageId);
+                            this.closeMenus();
+                            // Maybe focus on the page row? For now just re-render is fine.
+                        } else {
+                            const blk = this.state.blocks[id];
+                            blk.type = opt.type;
+                            blk.content = '';
+                            if (opt.type === 'toggle') { blk.collapsed = false; blk.children = []; }
+                            this.save(); this.loadPage(this.state.activePageId);
+                            this.closeMenus();
+                            setTimeout(() => {
+                                const el = document.querySelector(`[data-id="${id}"] .content-editable`);
+                                if (el) el.focus();
+                            }, 50);
+                        }
+                    };
+                    menu.appendChild(item);
+                });
+
+                if (matches.length === 0) menu.innerHTML += `<div style="padding:12px; color:var(--text-muted); font-size:14px;">No matches found</div>`;
+                lucide.createIcons({ root: menu });
+
+                menu.style.display = 'flex';
+
+                const windowHeight = window.innerHeight;
+                const spaceBelow = windowHeight - rect.bottom;
+                const spaceAbove = rect.top;
+                const margin = 20;
+
+                if (spaceBelow < 250 && spaceAbove > spaceBelow) {
+                    menu.style.top = 'auto';
+                    menu.style.bottom = (windowHeight - rect.top + 5) + 'px';
+                    menu.style.maxHeight = (spaceAbove - margin) + 'px';
+                } else {
+                    menu.style.bottom = 'auto';
+                    menu.style.top = (rect.bottom + 5 + window.scrollY) + 'px';
+                    menu.style.maxHeight = (spaceBelow - margin) + 'px';
+                }
+
+                if (parseInt(menu.style.maxHeight) > 280) menu.style.maxHeight = '280px';
+                menu.style.left = rect.left + 'px';
+            }
+
+            addBlock(prevId, type) {
+                const page = this.state.pages[this.state.activePageId];
+                const newId = uid();
+                this.state.blocks[newId] = { id: newId, type: type, content: '' };
+                const idx = prevId ? page.blocks.indexOf(prevId) : -1;
+                if (idx === -1) page.blocks.push(newId);
+                else page.blocks.splice(idx + 1, 0, newId);
+                this.save();
+                this.loadPage(this.state.activePageId);
+                setTimeout(() => {
+                    const el = document.querySelector(`[data-id="${newId}"] .content-editable`);
+                    if (el) el.focus();
+                }, 10);
+            }
+
+            deleteBlock(id) {
+                const page = this.state.pages[this.state.activePageId];
+                const idx = page.blocks.indexOf(id);
+                if (idx > -1) {
+                    const block = this.state.blocks[id];
+
+                    // If recursive page, move to trash? 
+                    if (block.type === 'page' && block.pageId) {
+                        this.moveToTrash(block.pageId);
+                    }
+
+                    page.blocks.splice(idx, 1);
+                    delete this.state.blocks[id];
+                    this.save();
+                    this.loadPage(this.state.activePageId);
+                    if (idx > 0) {
+                        const prev = document.querySelector(`[data-id="${page.blocks[idx - 1]}"] .content-editable`);
+                        if (prev) {
+                            prev.focus();
+                            const range = document.createRange();
+                            range.selectNodeContents(prev);
+                            range.collapse(false);
+                            const sel = window.getSelection();
+                            sel.removeAllRanges();
+                            sel.addRange(range);
+                        }
+                    }
+                }
+            }
+
+            // --- SIDEBAR RENDER ---
+            renderSidebar() {
+                const pagesArr = Object.values(this.state.pages);
+
+                // 1. Render Favorites
+                const favList = document.getElementById('favorites-list');
+                const favSection = document.getElementById('favorites-section');
+                favList.innerHTML = '';
+
+                const favorites = pagesArr.filter(p => p.favorite);
+                if (favorites.length > 0) {
+                    favSection.classList.remove('hidden');
+                    favorites.forEach(p => {
+                        favList.appendChild(this.createSidebarRow(p, 0, false));
+                    });
+                } else {
+                    favSection.classList.add('hidden');
+                }
+
+                // 2. Render Private Tree (Recursive)
+                const pageList = document.getElementById('page-list');
+                pageList.innerHTML = '';
+
+                // Get roots (pages with no parent)
+                const roots = pagesArr.filter(p => !p.parentId);
+                roots.forEach(p => {
+                    this.renderTreeRecursive(p, pageList, 0);
+                });
+
+                lucide.createIcons();
+            }
+
+            renderTreeRecursive(page, container, depth) {
+                const row = this.createSidebarRow(page, depth, true);
+                const wrapper = document.createElement('div');
+                wrapper.className = 'sidebar-item-container';
+                wrapper.appendChild(row);
+
+                // Children
+                const children = Object.values(this.state.pages).filter(p => p.parentId === page.id);
+                if (children.length > 0 && !page.collapsed) {
+                    const childContainer = document.createElement('div');
+                    childContainer.className = 'sidebar-children-container';
+                    children.forEach(child => this.renderTreeRecursive(child, childContainer, depth + 1));
+                    wrapper.appendChild(childContainer);
+                }
+
+                container.appendChild(wrapper);
+            }
+
+            createSidebarRow(page, depth, showToggle) {
+                const row = document.createElement('div');
+                const isActive = page.id === this.state.activePageId;
+                row.className = `sidebar-row ${isActive ? 'active' : ''}`;
+                row.setAttribute('data-page-id', page.id);
+                row.onclick = () => this.loadPage(page.id);
+
+                // Icon Box
+                const iconBox = document.createElement('div');
+                iconBox.className = 'page-icon-box';
+                iconBox.innerHTML = `<span class="page-icon-text">${page.icon || '📄'}</span>`;
+
+                // Toggle Overlay
+                const children = Object.values(this.state.pages).filter(p => p.parentId === page.id);
+                if (showToggle && children.length > 0) {
+                    const overlay = document.createElement('div');
+                    overlay.className = 'page-toggle-overlay';
+                    overlay.innerHTML = `<i data-lucide="${page.collapsed ? 'chevron-right' : 'chevron-down'}" width="12"></i>`;
+                    overlay.onclick = (e) => {
+                        e.stopPropagation();
+                        page.collapsed = !page.collapsed;
+                        this.save();
+                        this.renderSidebar();
+                    };
+                    iconBox.appendChild(overlay);
+                }
+
+                // Title
+                const title = document.createElement('span');
+                title.className = 'truncate text-sm w-full';
+                title.innerText = page.title || 'Untitled';
+
+                // Actions (Hover)
+                const actions = document.createElement('div');
+                actions.className = 'sidebar-actions';
+
+                const moreBtn = document.createElement('div');
+                moreBtn.className = 'action-btn';
+                moreBtn.innerHTML = `<i data-lucide="more-horizontal" width="14"></i>`;
+                moreBtn.onclick = (e) => this.openSidebarMenu(e, page.id);
+
+                const addBtn = document.createElement('div');
+                addBtn.className = 'action-btn';
+                addBtn.innerHTML = `<i data-lucide="plus" width="14"></i>`;
+                addBtn.onclick = (e) => { e.stopPropagation(); this.createNewPage(page.id); };
+
+                actions.appendChild(moreBtn);
+                actions.appendChild(addBtn);
+
+                row.appendChild(iconBox);
+                row.appendChild(title);
+                row.appendChild(actions);
+
+                return row;
+            }
+
+            openSidebarMenu(e, pageId) {
+                e.stopPropagation();
+                this.closeMenus();
+                this.contextPageId = pageId;
+                const menu = document.getElementById('sidebar-menu');
+
+                const page = this.state.pages[pageId];
+                const favText = document.getElementById('ctx-fav-text');
+                favText.innerText = page.favorite ? "Remove from Favorites" : "Add to Favorites";
+
+                menu.style.display = 'flex';
+                let top = e.clientY;
+                if (top + menu.offsetHeight > window.innerHeight) top -= menu.offsetHeight;
+                menu.style.top = top + 'px';
+                menu.style.left = e.clientX + 'px';
+            }
+
+            sidebarActionFavorite() {
+                if (this.contextPageId) {
+                    const page = this.state.pages[this.contextPageId];
+                    page.favorite = !page.favorite;
+                    this.save();
+                    this.renderSidebar();
+                    if (this.state.activePageId === this.contextPageId) this.loadPage(this.contextPageId);
+                }
+                this.closeMenus();
+            }
+
+            toggleFavorite() {
+                const page = this.state.pages[this.state.activePageId];
+                page.favorite = !page.favorite;
+                this.save();
+                this.renderSidebar();
+                this.loadPage(this.state.activePageId);
+            }
+
+            sidebarDeletePage() {
+                if (this.contextPageId) {
+                    if (confirm("Move page to Trash?")) {
+                        this.moveToTrash(this.contextPageId);
+                        if (this.state.activePageId === this.contextPageId) this.loadPage(Object.keys(this.state.pages)[0]);
+                        else this.renderSidebar();
+                    }
+                }
+                this.closeMenus();
+            }
+
+            sidebarDuplicatePage() {
+                const targetId = this.contextPageId || this.state.activePageId;
+                if (targetId) {
+                    const original = this.state.pages[targetId];
+                    const newId = uid();
+                    const clone = JSON.parse(JSON.stringify(original));
+                    clone.id = newId; clone.title += " (Copy)";
+                    clone.blocks = [];
+                    original.blocks.forEach(bid => {
+                        const bOrig = this.state.blocks[bid];
+                        if (bOrig) {
+                            const bNewId = uid();
+                            const bClone = JSON.parse(JSON.stringify(bOrig));
+                            bClone.id = bNewId;
+                            this.state.blocks[bNewId] = bClone;
+                            clone.blocks.push(bNewId);
+                        }
+                    });
+                    this.state.pages[newId] = clone;
+                    this.save();
+                    this.renderSidebar();
+                }
+                this.closeMenus();
+            }
+
+            sidebarRenamePage() {
+                this.closeMenus();
+                const targetId = this.contextPageId || this.state.activePageId;
+                this.loadPage(targetId);
+                setTimeout(() => {
+                    const t = document.getElementById('page-title');
+                    t.focus();
+                    document.execCommand('selectAll', false, null);
+                }, 50);
+            }
+
+            sidebarActionCopyLink() {
+                /* Simplified Copy Link */
+                const dummy = document.createElement('textarea');
+                dummy.value = window.location.href;
+                document.body.appendChild(dummy);
+                dummy.select();
+                document.execCommand('copy');
+                document.body.removeChild(dummy);
+                this.showToast("Copied link to clipboard");
+                this.closeMenus();
+            }
+
+            sidebarActionOpenNewTab() {
+                window.open(window.location.href, '_blank');
+                this.closeMenus();
+            }
+
+            toggleMoreActionsMenu(e) {
+                e.stopPropagation();
+                const menu = document.getElementById('more-actions-menu');
+                const wasOpen = menu.style.display === 'flex';
+                this.closeMenus();
+
+                if (!wasOpen) {
+                    const page = this.state.pages[this.state.activePageId];
+                    document.querySelectorAll('.font-card').forEach(el => el.classList.remove('selected'));
+                    if (page.font === 'serif') document.getElementById('font-card-serif').classList.add('selected');
+                    else if (page.font === 'mono') document.getElementById('font-card-mono').classList.add('selected');
+                    else document.getElementById('font-card-default').classList.add('selected');
+                    document.getElementById('toggle-track-smallText').className = 'toggle-track' + (page.smallText ? ' on' : '');
+                    document.getElementById('toggle-track-fullWidth').className = 'toggle-track' + (page.fullWidth ? ' on' : '');
+                    document.getElementById('toggle-track-locked').className = 'toggle-track' + (page.locked ? ' on' : '');
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    menu.style.display = 'flex';
+                    menu.style.top = (rect.bottom + 4) + 'px';
+                    menu.style.right = '12px';
+                }
+            }
+
+            toggleStyle(key) {
+                const page = this.state.pages[this.state.activePageId];
+                page[key] = !page[key];
+                this.save();
+                this.loadPage(this.state.activePageId);
+                // Update track if open
+                const track = document.getElementById('toggle-track-' + key);
+                if (track) track.className = 'toggle-track' + (page[key] ? ' on' : '');
+            }
+
+            toggleFont(fontType) {
+                const page = this.state.pages[this.state.activePageId];
+                page.font = fontType;
+                this.save();
+                this.loadPage(this.state.activePageId);
+                document.querySelectorAll('.font-card').forEach(el => el.classList.remove('selected'));
+                document.getElementById('font-card-' + fontType).classList.add('selected');
+            }
+
+            lockPage() { this.toggleStyle('locked'); }
+
+            // --- SEARCH ---
+            toggleSearch() {
+                this.searchOpen = !this.searchOpen;
+                document.getElementById('search-overlay').style.display = this.searchOpen ? 'flex' : 'none';
+                if (this.searchOpen) {
+                    const input = document.getElementById('search-input');
+                    input.value = ''; input.focus();
+                    this.sortedPagesCache = Object.values(this.state.pages).sort((a, b) => (a.title || "").toLowerCase().localeCompare((b.title || "").toLowerCase()));
+                    this.searchResults = this.sortedPagesCache;
+                    this.renderSearchResults();
+                    this.closeMenus();
+                }
+            }
+
+            handleSearchInput(e) {
+                const query = e.target.value.toLowerCase().trim();
+                let candidates = this.sortedPagesCache;
+                if (!query) { this.searchResults = candidates; this.renderSearchResults(); return; }
+                const MAX_SCORE = 50;
+                let scoredResults = candidates.map(page => ({ page: page, score: fuzzyScore(page.title || "", query) })).filter(item => item.score < MAX_SCORE);
+                scoredResults.sort((a, b) => a.score - b.score);
+                this.searchResults = scoredResults.map(item => item.page);
+                this.searchSelectedIndex = 0;
+                this.renderSearchResults();
+            }
+
+            renderSearchResults() {
+                const container = document.getElementById('search-results-list');
+                container.innerHTML = '';
+                if (this.searchResults.length === 0) { container.innerHTML = '<div class="search-empty">No results found</div>'; return; }
+                this.searchResults.forEach((p, index) => {
+                    const isSelected = index === this.searchSelectedIndex;
+                    const el = document.createElement('div');
+                    el.className = `search-result-item ${isSelected ? 'selected' : ''}`;
+                    let crumbs = []; let curr = p;
+                    while (curr) { crumbs.unshift(curr.title || 'Untitled'); curr = this.state.pages[curr.parentId]; }
+                    const crumbStr = crumbs.join(' / ');
+                    el.innerHTML = `
+                        <div class="search-item-icon">${p.icon}</div>
+                        <div class="search-item-info">
+                            <div class="search-item-title">${p.title || 'Untitled'}</div>
+                            <div class="search-item-breadcrumb">${crumbStr}</div>
+                        </div>
+                    `;
+                    el.onclick = () => { this.loadPage(p.id); this.toggleSearch(); };
+                    container.appendChild(el);
+                });
+                const selectedEl = container.children[this.searchSelectedIndex];
+                if (selectedEl) selectedEl.scrollIntoView({ block: 'nearest' });
+            }
+
+            navigateSearch(direction) {
+                if (this.searchResults.length === 0) return;
+                if (direction === 'down') this.searchSelectedIndex = (this.searchSelectedIndex + 1) % this.searchResults.length;
+                else this.searchSelectedIndex = (this.searchSelectedIndex - 1 + this.searchResults.length) % this.searchResults.length;
+                this.renderSearchResults();
+            }
+
+            // --- MOVE TO ---
+            sidebarActionMoveTo() {
+                if (!this.contextPageId) { if (this.state.activePageId) this.contextPageId = this.state.activePageId; else return; }
+                this.closeMenus();
+                const rowEl = document.querySelector(`.sidebar-row[data-page-id="${this.contextPageId}"]`);
+                this.openMoveToMenu(this.contextPageId, rowEl);
+            }
+
+            openMoveToMenu(pageId, triggerEl) {
+                this.pageToMoveId = pageId;
+                const menu = document.getElementById('move-to-popup');
+                const input = document.getElementById('move-search-input');
+                input.value = '';
+                this.renderMoveToCandidates();
+                menu.style.display = 'flex';
+                if (triggerEl) {
+                    const rect = triggerEl.getBoundingClientRect();
+                    const left = rect.right - 20;
+                    let top = rect.top;
+                    const menuHeight = menu.offsetHeight || 300;
+                    if (top + menuHeight > window.innerHeight - 10) top = window.innerHeight - menuHeight - 10;
+                    if (top < 10) top = 10;
+                    menu.style.left = left + 'px';
+                    menu.style.top = top + 'px';
+                } else {
+                    menu.style.left = '50%'; menu.style.top = '100px'; menu.style.transform = 'translateX(-50%)';
+                }
+                input.focus();
+                input.oninput = (e) => this.renderMoveToCandidates(e.target.value);
+            }
+
+            renderMoveToCandidates(query = '') {
+                const list = document.getElementById('move-results-list');
+                list.innerHTML = '';
+                const q = query.toLowerCase();
+                const currentPage = this.state.pages[this.pageToMoveId];
+
+                // Option to move to root
+                if (currentPage && currentPage.parentId !== null) {
+                    const rootItem = document.createElement('div');
+                    rootItem.className = 'move-item';
+                    rootItem.onclick = () => this.completeMove(null);
+                    rootItem.innerHTML = `
+                        <div class="move-nav-icon"><i data-lucide="chevron-right" width="12"></i></div>
+                        <div class="move-nav-icon"><i data-lucide="corner-up-left" width="16"></i></div>
+                        <span class="truncate" style="flex:1;">Move to Private (Top Level)</span>
+                    `;
+                    list.appendChild(rootItem);
+                }
+
+                const candidates = Object.values(this.state.pages).filter(p => {
+                    if (p.id === this.pageToMoveId) return false;
+                    if (this.isDescendant(this.pageToMoveId, p.id)) return false;
+                    return (p.title || 'Untitled').toLowerCase().includes(q);
+                });
+
+                if (candidates.length === 0 && list.children.length === 0) {
+                    list.innerHTML = '<div style="padding:12px; color:var(--text-muted); font-size:12px;">No pages found</div>';
+                    return;
+                }
+
+                candidates.forEach(p => {
+                    const item = document.createElement('div');
+                    item.className = 'move-item';
+                    item.onclick = () => this.completeMove(p.id);
+                    item.innerHTML = `
+                         <div class="move-nav-icon"><i data-lucide="chevron-right" width="12"></i></div>
+                         <div class="move-nav-icon">${p.icon || '📄'}</div>
+                         <span class="truncate" style="flex:1;">${p.title || 'Untitled'}</span>
+                    `;
+                    list.appendChild(item);
+                });
+                lucide.createIcons();
+            }
+
+            isDescendant(parentId, childId) {
+                if (parentId === childId) return true;
+                const child = this.state.pages[childId];
+                if (!child || !child.parentId) return false;
+                return this.isDescendant(parentId, child.parentId);
+            }
+
+            completeMove(targetPageId) {
+                const page = this.state.pages[this.pageToMoveId];
+                if (page) {
+                    page.parentId = targetPageId;
+                    if (targetPageId !== null) {
+                        const target = this.state.pages[targetPageId];
+                        if (target) target.collapsed = false;
+                    }
+                    this.save();
+                    this.renderSidebar();
+                    this.loadPage(this.pageToMoveId);
+                    this.showToast(`Moved to ${targetPageId ? this.state.pages[targetPageId].title : 'Private'}`);
+                }
+                document.getElementById('move-to-popup').style.display = 'none';
+            }
+
+            // --- SIDE PEEK ---
+            sidebarActionOpenSidePeek() {
+                if (this.contextPageId) {
+                    this.closeMenus();
+                    const page = this.state.pages[this.contextPageId];
+                    this.renderSidePeek(page);
+                }
+            }
+            renderSidePeek(page) {
+                const peek = document.getElementById('side-peek');
+                const body = document.getElementById('side-peek-body');
+                let html = `<div style="padding-bottom: 20px; border-bottom:1px solid var(--border-color); margin-bottom:20px;">
+                    <div style="font-size:40px;">${page.icon}</div>
+                    <h1 style="margin:0; font-size:24px;">${page.title}</h1>
+                </div>`;
+                page.blocks.forEach(bid => {
+                    const b = this.state.blocks[bid];
+                    if (b) {
+                        if (b.type === 'text') html += `<p>${b.content}</p>`;
+                        else if (b.type === 'h1') html += `<h3>${b.content}</h3>`;
+                        else if (b.type === 'h2') html += `<h4>${b.content}</h4>`;
+                        else if (b.type === 'todo') html += `<div style="display:flex;gap:8px;"><span>${b.checked ? '☑' : '☐'}</span><span>${b.content}</span></div>`;
+                        else if (b.type === 'toggle') html += `<details><summary>${b.content}</summary></details>`;
+                    }
+                });
+                body.innerHTML = html;
+                peek.classList.add('open');
+            }
+            closeSidePeek() { document.getElementById('side-peek').classList.remove('open'); }
+            openSidePeekFull() {
+                this.closeSidePeek();
+                if (this.contextPageId) this.loadPage(this.contextPageId);
+            }
+
+            toggleSidebar() {
+                this.sidebarOpen = !this.sidebarOpen;
+                const sb = document.getElementById('sidebar');
+                const icon = document.getElementById('sidebar-toggle-icon');
+                if (this.sidebarOpen) {
+                    sb.style.marginLeft = '0';
+                    icon.setAttribute('data-lucide', 'menu');
+                } else {
+                    sb.style.marginLeft = `-${getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width')}`;
+                    icon.setAttribute('data-lucide', 'panel-left-open');
+                }
+                lucide.createIcons();
+            }
+
+            showToast(msg) {
+                const toast = document.getElementById('toast-notification');
+                toast.innerText = msg;
+                toast.style.display = 'none';
+                toast.offsetHeight;
+                toast.style.display = 'flex';
+            }
+
+            randomizeIcon() {
+                const icons = ['🍕', '🚀', '⭐', '🔥', '📚', '💡', '🎨', '💻', '🌊', '🌵'];
+                const page = this.state.pages[this.state.activePageId];
+                page.icon = icons[Math.floor(Math.random() * icons.length)];
+                this.save(); this.loadPage(this.state.activePageId); this.renderSidebar();
+            }
+
+            setupEventListeners() {
+                // Keydown Global
+                document.addEventListener('keydown', e => {
+                    if ((e.metaKey || e.ctrlKey) && e.key === 'p') { e.preventDefault(); this.toggleSearch(); }
+                    if (e.key === 'Escape') {
+                        this.closeMenus();
+                        this.closeSidePeek();
+                        if (this.searchOpen) this.toggleSearch();
+                    }
+                });
+
+                // Search Input Events
+                const searchInput = document.getElementById('search-input');
+                searchInput.addEventListener('input', e => this.handleSearchInput(e));
+                searchInput.addEventListener('keydown', e => {
+                    if (e.key === 'ArrowDown') { e.preventDefault(); this.navigateSearch('down'); }
+                    else if (e.key === 'ArrowUp') { e.preventDefault(); this.navigateSearch('up'); }
+                    else if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (this.searchResults[this.searchSelectedIndex]) {
+                            this.loadPage(this.searchResults[this.searchSelectedIndex].id); this.toggleSearch();
+                        }
+                    }
+                });
+
+                document.addEventListener('click', (e) => this.handleGlobalClick(e));
+            }
+        }
+
+        const app = new NotionApp();
+    </script>
+</body>
+
+</html>
